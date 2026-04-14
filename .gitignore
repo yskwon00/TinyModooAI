@@ -1,0 +1,21 @@
+# Large Data and Outputs
+datasets/
+outputs/
+
+# Python logs and caches
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+.venv
+env/
+venv/
+.DS_Store
+
+# Training temp outputs
+1_train/outputs/
+1_train/outputs_sft/
+1_train/tinymodoo_final/
+1_train/tinymodoo_sft_final/
+2_convert/vllm_model_base/
+2_convert/vllm_model_chat/
