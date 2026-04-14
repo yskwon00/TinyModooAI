@@ -42,14 +42,32 @@ def quantize_gguf():
         print("Please run: brew install llama.cpp")
         return
 
-    # 4. Download convert_hf_to_gguf.py if not exists
+    # 4. Download convert_hf_to_gguf.py from a VERIFIED stable tag (b3600)
+    # This version is highly compatible with gguf==0.10.0 and has the correct filename.
     convert_script = "convert_hf_to_gguf.py"
-    if not os.path.exists(convert_script):
-        print("\nDownloading conversion script from llama.cpp official repo...")
-        url = "https://raw.githubusercontent.com/ggerganov/llama.cpp/master/convert_hf_to_gguf.py"
+    
+    # Force re-download to ensure we get the b3600 version
+    if os.path.exists(convert_script):
+        os.remove(convert_script)
+
+    print("\nDownloading verified stable conversion script (tag b3600) from llama.cpp...")
+    url = "https://raw.githubusercontent.com/ggerganov/llama.cpp/b3600/convert_hf_to_gguf.py"
+    try:
+        urllib.request.urlretrieve(url, convert_script)
+    except Exception as e:
+        print(f"Failed to download from b3600: {e}")
+        print("Trying alternative tag (b3500)...")
+        url = "https://raw.githubusercontent.com/ggerganov/llama.cpp/b3500/convert_hf_to_gguf.py"
         urllib.request.urlretrieve(url, convert_script)
 
-    # 5. Step 1: Convert HF to F16 GGUF
+    # 5. Check 'gguf' package version (vllm requires 0.10.0)
+    print("\nEnsuring 'gguf' package is installed...")
+    try:
+        import gguf
+    except ImportError:
+        run_command(f"{sys.executable} -m pip install gguf==0.10.0")
+
+    # 6. Step 1: Convert HF to F16 GGUF
     print("\n[Step 1/2] Converting HF to F16 GGUF...")
     ret = run_command(f"{sys.executable} {convert_script} {source_model} --outfile {temp_f16_path}")
     if ret != 0:
