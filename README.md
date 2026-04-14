@@ -1,4 +1,4 @@
-# 🚀 TinyModooAI (타이니 모두의 AI)
+# 🚀 아주 작은 모두의 AI (TinyModooAI)
 
 TinyModooAI는 vLLM 서빙이 가능한 표준화된 아키텍처(Mistral 기반)를 사용하는 고성능 소형 언어 모델(SLM) 학습 및 배포 파이프라인입니다.
 
