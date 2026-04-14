@@ -1,6 +1,7 @@
 import os
 import subprocess
 import sys
+import urllib.request
 
 def run_command(command):
     print(f"Running: {command}")
@@ -11,7 +12,7 @@ def run_command(command):
     return process.returncode
 
 def quantize_gguf():
-    print("\n=== TinyModooAI GGUF Quantization Tool ===")
+    print("\n=== TinyModooAI REAL GGUF Quantization Tool ===")
     
     # 1. Path Setup
     source_model = "../outputs/sft"
@@ -19,7 +20,7 @@ def quantize_gguf():
     os.makedirs(output_base, exist_ok=True)
 
     if not os.path.exists(source_model):
-        print(f"Error: SFT model not found at {source_model}. Please train and SFT first.")
+        print(f"Error: SFT model not found at {source_model}.")
         return
 
     # 2. Select Quantization Type
@@ -29,45 +30,49 @@ def quantize_gguf():
     print("3: 16-bit (F16)   - Original quality, no compression")
     
     choice = input("Select (1/2/3): ")
-    
-    q_map = {
-        "1": "Q4_K_M",
-        "2": "Q8_0",
-        "3": "F16"
-    }
-    
+    q_map = {"1": "Q4_K_M", "2": "Q8_0", "3": "F16"}
     q_method = q_map.get(choice, "Q4_K_M")
-    output_filename = f"tinymodoo-sft-{q_method.lower()}.gguf"
-    output_path = os.path.join(output_base, output_filename)
-
-    # 3. Check for llama-cpp-python conversion tools
-    print(f"\nTargeting: {q_method}")
-    print(f"Output: {output_path}")
-
-    # Note: Using python's gguf library for conversion is most reliable
-    # We first convert HF to F16 GGUF, then quantize if needed.
-    # This requires 'gguf' and 'sentencepiece' packages.
     
-    print("\n[Step 1] Converting HF to GGUF (this may take a moment)...")
-    # For now, we use a simple command that assumes 'llama-cpp-python' tools are available
-    # or instruction for the user to use the official llama.cpp converter.
-    
-    # As a coding assistant, I will provide a method that uses the installed llama.cpp tools if possible.
-    # If not, I'll guide the user to install them.
-    
-    try:
-        import gguf
-        print("Required 'gguf' package found.")
-    except ImportError:
-        print("Installing required packages (gguf, sentencepiece)...")
-        run_command(f"{sys.executable} -m pip install gguf sentencepiece")
+    temp_f16_path = os.path.join(output_base, "temp_f16.gguf")
+    output_path = os.path.join(output_base, f"tinymodoo-sft-{q_method.lower()}.gguf")
 
-    # In a real environment, we would use the convert_hf_to_gguf.py from llama.cpp
-    # Here, we will simulate the logic or provide the exact command.
-    print(f"\n[Step 2] Performing {q_method} Quantization...")
-    print(f"Success! Model quantized to {output_path} (Simulation mode)")
-    print("To perform actual GGUF quantization on Mac, we recommend using 'llama.cpp' binaries.")
-    print(f"Command: llama-quantize {source_model} {output_path} {q_method}")
+    # 3. Check for llama-quantize (from 'brew install llama.cpp')
+    if subprocess.run("command -v llama-quantize", shell=True).returncode != 0:
+        print("\n[!] Error: 'llama.cpp' is not installed.")
+        print("Please run: brew install llama.cpp")
+        return
+
+    # 4. Download convert_hf_to_gguf.py if not exists
+    convert_script = "convert_hf_to_gguf.py"
+    if not os.path.exists(convert_script):
+        print("\nDownloading conversion script from llama.cpp official repo...")
+        url = "https://raw.githubusercontent.com/ggerganov/llama.cpp/master/convert_hf_to_gguf.py"
+        urllib.request.urlretrieve(url, convert_script)
+
+    # 5. Step 1: Convert HF to F16 GGUF
+    print("\n[Step 1/2] Converting HF to F16 GGUF...")
+    ret = run_command(f"{sys.executable} {convert_script} {source_model} --outfile {temp_f16_path}")
+    if ret != 0:
+        print("Error during conversion to F16.")
+        return
+
+    if q_method == "F16":
+        os.rename(temp_f16_path, output_path)
+        print(f"\nSUCCESS: F16 model saved to {output_path}")
+        return
+
+    # 6. Step 2: Quantize F16 GGUF to Target Bit
+    print(f"\n[Step 2/2] Quantizing to {q_method}...")
+    ret = run_command(f"llama-quantize {temp_f16_path} {output_path} {q_method}")
+    
+    # Cleanup temp file
+    if os.path.exists(temp_f16_path):
+        os.remove(temp_f16_path)
+
+    if ret == 0:
+        print(f"\n✨ SUCCESS: Model quantized to {output_path}")
+    else:
+        print("\n[!] Quantization failed.")
 
 if __name__ == "__main__":
     quantize_gguf()
