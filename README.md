@@ -74,6 +74,35 @@ cd ../4_serve && ./run_vllm.sh             # 로컬 서빙 시작
 
 ---
 
+## 🎨 실전 활용 가이드 (Ollama & Open WebUI)
+
+경량화된 `.gguf` 모델을 **Ollama**에 등록하여 **Open WebUI**에서 사용하는 방법입니다.
+
+### 1. Ollama 모델 등록
+프로젝트 루트(최상위 폴더)에서 `Modelfile`이라는 이름의 파일을 만들고 아래 내용을 입력합니다.
+```dockerfile
+# 모델 파일 경로 (프로젝트 루트 기준)
+FROM ./outputs/quantized/gguf/tinymodoo-sft-q4_k_m.gguf
+
+# 대화 템플릿 설정 (훈련 시 사용된 프롬프트 포맷과 일치해야 합니다)
+TEMPLATE """{{ .System }}
+### 사용자:
+{{ .Prompt }}
+### 어시스턴트:
+"""
+PARAMETER stop "###"
+```
+그 후 터미널(루트 폴더)에서 모델을 생성합니다:
+```bash
+ollama create tinymodoo -f Modelfile
+```
+
+### 2. Open WebUI 연동
+- Open WebUI가 실행 중이라면 모델 목록에 `tinymodoo:latest`가 자동으로 나타납니다.
+- 이제 웹 브라우저를 통해 시각적으로 풍부한 환경에서 나만의 SLM과 대화할 수 있습니다!
+
+---
+
 ## 🛠️ 기술 스택 (Tech Stack)
 - **Model**: PyTorch, Transformers, Accelerate
 - **Quantization**: llama.cpp (GGUF), AutoAWQ (AWQ)
