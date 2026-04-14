@@ -46,6 +46,32 @@ cd 4_serve
 
 ---
 
+## 🎨 활용 가이드 (Ollama & Open WebUI)
+
+압축된 `.gguf` 모델을 **Ollama**에 등록하여 **Open WebUI**에서 사용하는 방법입니다.
+
+### 1. Ollama 모델 등록
+`3_quantize` 폴더 안에 아래 내용으로 `Modelfile`이라는 이름의 파일을 만듭니다.
+```dockerfile
+FROM ../outputs/quantized/gguf/tinymodoo-sft-q4_k_m.gguf
+TEMPLATE """{{ .System }}
+### 사용자:
+{{ .Prompt }}
+### 어시스턴트:
+"""
+PARAMETER stop "###"
+```
+그 후 터미널에서 모델을 생성합니다:
+```bash
+ollama create tinymodoo -f Modelfile
+```
+
+### 2. Open WebUI에서 대화하기
+- Open WebUI를 실행하면 모델 목록에 `tinymodoo:latest`가 자동으로 나타납니다.
+- 선택 후 대화를 시작하세요!
+
+---
+
 ## 🛠️ 기술 스택
 - **Core**: Python, PyTorch, Transformers, Datasets, Accelerate
 - **Quantization**: llama.cpp, AutoAWQ
